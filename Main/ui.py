@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import (QGroupBox,QHBoxLayout,QLabel,QSpinBox,QWidget,
+from PySide6.QtWidgets import (QGroupBox,QLabel,QSpinBox,QWidget,
                                 QPushButton,QVBoxLayout,QGridLayout,QDoubleSpinBox)
 import maya.cmds as cmds
 
