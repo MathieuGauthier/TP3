@@ -1,9 +1,7 @@
 
+import animator
 from PySide6.QtWidgets import (QGroupBox,QLabel,QSpinBox,QWidget,
                                 QPushButton,QVBoxLayout,QGridLayout,QDoubleSpinBox)
-import maya.cmds as cmds
-import random
-
 
 
 class UiAnimator(QWidget):
@@ -15,14 +13,14 @@ class UiAnimator(QWidget):
         self.build_ui()
 
     
-    
+# ------------------------------------------- Fonction qui va construire l'interface -----------------------------------------   
     def build_ui(self):
         
         self.interface = QVBoxLayout(self)
         self.interface.setSpacing(10)
 
 
-# -------------------------------------- Section du timing ----------------------------------------------
+    # -------------------------------------- Section du timing ----------------------------------------------
 
         # 1: Le groupe (Le contenant)
         groupe_temps = QGroupBox("Animation Timing")
@@ -46,25 +44,21 @@ class UiAnimator(QWidget):
         layout_temps.addWidget(label_step, 0, 2)
         layout_temps.addWidget(self.spin_step, 0, 3)
 
+    # --------------------------------------- Section des transform ----------------------------------------------
+    # J'utilise ma fonction d'optimisation pour ne pas répéter la formule du timing, je réduis le nombre de lignes de code.
+    # Ici je peux initialiser mes valeurs min et max de chaque groupe transform.
 
-
-
-# --------------------------------------- Section des transform ----------------------------------------------
-# J'utilise ma fonction d'optimisation pour ne pas répéter la formule du timing, je réduis le nombre de lignes de code.
-# Ici je peux initialiser mes valeurs min et max de chaque groupe transform.
-
-
+        # Je place ici dans le QGroupBox le titre et les valeurs min et max de chaque groupe.
         group_translate, self.t_min, self.t_max = self.create_transform_group("Translate Parameters", -1, 1)
         group_rotate, self.r_min, self.r_max = self.create_transform_group("Rotate Parameters", -180, 180)
         group_scale, self.scale_min, self.scale_max = self.create_transform_group("Scale Parameters", 0.5, 1)
 
-
-# ------------------------------------------ Section du bouton ------------------------------------------------
+    # ------------------------------------------ Section du bouton ------------------------------------------------
 
         generate_button = QPushButton("Generate animation")
         generate_button.clicked.connect(self.on_generate_clicked) # ici, le bouton va detenir la fonction qui detient le code de l'outil.
 
-# ------------------------------------------- Le layout de l'interface -----------------------------------------
+    # ------------------------------------------- Le layout de l'interface -----------------------------------------
         # Fin : On ajoute ensuite a l'interface
         self.interface.addWidget(groupe_temps)
         self.interface.addWidget(group_translate)
@@ -72,14 +66,27 @@ class UiAnimator(QWidget):
         self.interface.addWidget(group_scale)
         self.interface.addWidget(generate_button)
 
- 
-# -------------------------------------------- Optimisation  ---------------------------------
-# Comme le group translate, rotate et  scale son identique, je creer une fonction qui recoit ce qui change et retourne pour construire les groupes
-# spins_min et spins_max sont deux listes vides. Chaque fois qu’on crée un spinbox, on le range dedans pour le retrouver plus tard.
-#
 
 
 
+    # --------------------------------------- Fonction du boutton ----------------------------------------------
+    # J'appelle la fonction qui va generer l'animation. Elle est dans le fichier animator.py, donc je dois l'importer.
+    def on_generate_clicked(self):
+        animator.generate_animation(
+            duration=self.spin_duration.value(),
+            step=self.spin_step.value(),
+            t_min=[spin.value() for spin in self.t_min],
+            t_max=[spin.value() for spin in self.t_max],
+            r_min=[spin.value() for spin in self.r_min],
+            r_max=[spin.value() for spin in self.r_max],
+            scale_min=[spin.value() for spin in self.scale_min],
+            scale_max=[spin.value() for spin in self.scale_max]
+            )
+
+        
+    # -------------------------------------------- Fonction d'optimisation  -------------------------------------------------------
+    # Comme le group translate, rotate et  scale son identique, je creer une fonction qui recoit ce qui change et retourne pour construire les groupes
+    # spins_min et spins_max sont deux listes vides. Chaque fois qu’on crée un spinbox, on le range dedans pour le retrouver plus tard.
     def create_transform_group(self, title, default_min, default_max):
         group = QGroupBox(title)
         layout = QGridLayout(group)
@@ -110,78 +117,4 @@ class UiAnimator(QWidget):
             spins_max.append(spin_max)
 
         return group, spins_min, spins_max # Je retourne ensuite le group et les 2 listes.
-
-
-
-
-
-
-
-
-
-    # ------------------------------------------- LA fonction qui va generer l'animation -----------------------------------------
-
-
-
-    def on_generate_clicked(self):
-        
-        selection = cmds.ls(selection=True, type="transform") # Je recupere la selection de l'utilisateur, mais je ne veux que les transforms.
-        if not selection:
-            cmds.warning("Sélectionne au moins un objet.")
-            return
-        
-        # ----------------------- Je recupere les valeurs du spinbox de la section timing ----------------------
-        duration = self.spin_duration.value()
-        step = self.spin_step.value()
-
-        start = 0
-        end = duration
-
-        frames = list(range(start, end, step))
-        frames.append(end)  # Ajoute la dernière frame
-        print(frames) # J'imprimme la liste des frames pour verifier que tout est ok.
-
-        cmds.playbackOptions(minTime=start, maxTime=end) # configurer la durée de l'animation
-
-
-        # ----------------------- Je recupere les valeurs de translate ----------------------
-        t_min = [spin.value() for spin in self.t_min]
-        t_max = [spin.value() for spin in self.t_max]
-        r_min = [spin.value() for spin in self.r_min]
-        r_max = [spin.value() for spin in self.r_max]
-        scale_min = [spin.value() for spin in self.scale_min]
-        scale_max = [spin.value() for spin in self.scale_max]
-
-        # A chaque frame, pour l'objet selectionne, je place une keyframe random sur chaque axe (x,y,z) entre les valeurs min et max.
-        
-        
-        for obj in selection:
-            for frame in frames:
-                
-                # Pour la translation
-                for i, axis in enumerate("xyz"): #  i = 0,1,2 pour x,y,z. axis = "x","y","z"
-                    value = random.uniform(t_min[i], t_max[i])
-                    cmds.setKeyframe(obj, attribute=f"t{axis}", value=value, time=frame)
-
-                # Pour la rotation
-                for i, axis in enumerate("xyz"): #  i = 0,1,2 pour x,y,z. axis = "x","y","z"
-                    value = random.uniform(r_min[i], r_max[i])
-                    cmds.setKeyframe(obj, attribute=f"r{axis}", value=value, time=frame)
-
-                # Pour la scale
-                for i, axis in enumerate("xyz"): #  i = 0,1,2 pour x,y,z. axis = "x","y","z"
-                    value = random.uniform(scale_min[i], scale_max[i])
-                    cmds.setKeyframe(obj, attribute=f"s{axis}", value=value, time=frame)
-
-
-
-def main():
-    global tool_window
-    try:
-        tool_window.close()
-    except Exception:
-        pass
-    tool_window = UiAnimator()
-    tool_window.show()
-
-main()
+# ------------------------------------------------------------------------------------------------------------------------------
