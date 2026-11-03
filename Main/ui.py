@@ -30,13 +30,13 @@ class UiAnimator(QWidget):
         label_duration = QLabel("Duration (Frames) : ")
         self.spin_duration = QSpinBox()
         self.spin_duration.setRange(1, 10000)
-        self.spin_duration.setValue(1)
+        self.spin_duration.setValue(180) # Valeur initial de duration
 
         # 2.1 : A quelle frequence on ajoute une cle sur la ligne de temps
         label_step = QLabel("Steps (Frames) : ")
         self.spin_step = QSpinBox()
         self.spin_step.setRange(1, 10000)
-        self.spin_step.setValue(1)
+        self.spin_step.setValue(20) # Valeur initial de step
 
         # 3 : On place le tout dans une Grille
         layout_temps.addWidget(label_duration, 0, 0)
@@ -49,9 +49,9 @@ class UiAnimator(QWidget):
     # Ici je peux initialiser mes valeurs min et max de chaque groupe transform.
 
         # Je place ici dans le QGroupBox le titre et les valeurs min et max de chaque groupe.
-        group_translate, self.t_min, self.t_max = self.create_transform_group("Translate Parameters", -1, 1)
+        group_translate, self.t_min, self.t_max = self.create_transform_group("Translate Parameters", -10, 10)
         group_rotate, self.r_min, self.r_max = self.create_transform_group("Rotate Parameters", -180, 180)
-        group_scale, self.scale_min, self.scale_max = self.create_transform_group("Scale Parameters", 0.5, 1)
+        group_scale, self.scale_min, self.scale_max = self.create_transform_group("Scale Parameters", 0.5, 2)
 
     # ------------------------------------------ Section du bouton ------------------------------------------------
 
