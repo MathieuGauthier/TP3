@@ -1,6 +1,9 @@
+
 from PySide6.QtWidgets import (QGroupBox,QLabel,QSpinBox,QWidget,
                                 QPushButton,QVBoxLayout,QGridLayout,QDoubleSpinBox)
 import maya.cmds as cmds
+import random
+
 
 
 class UiAnimator(QWidget):
@@ -52,14 +55,14 @@ class UiAnimator(QWidget):
 
 
         group_translate, self.t_min, self.t_max = self.create_transform_group("Translate Parameters", -1, 1)
-        group_rotate, self.r_min, self.r_max = self.create_transform_group("Rotate Parameters", -1, 1)
+        group_rotate, self.r_min, self.r_max = self.create_transform_group("Rotate Parameters", -180, 180)
         group_scale, self.scale_min, self.scale_max = self.create_transform_group("Scale Parameters", 0.5, 1)
 
 
 # ------------------------------------------ Section du bouton ------------------------------------------------
 
         generate_button = QPushButton("Generate animation")
-        #generate_button.clicked.connect() # ici, le bouton va detenir la fonction qui detient le code de l'outil.
+        generate_button.clicked.connect(self.on_generate_clicked) # ici, le bouton va detenir la fonction qui detient le code de l'outil.
 
 # ------------------------------------------- Le layout de l'interface -----------------------------------------
         # Fin : On ajoute ensuite a l'interface
@@ -108,6 +111,67 @@ class UiAnimator(QWidget):
 
         return group, spins_min, spins_max # Je retourne ensuite le group et les 2 listes.
 
+
+
+
+
+
+
+
+
+    # ------------------------------------------- LA fonction qui va generer l'animation -----------------------------------------
+
+
+
+    def on_generate_clicked(self):
+        
+        selection = cmds.ls(selection=True, type="transform") # Je recupere la selection de l'utilisateur, mais je ne veux que les transforms.
+        if not selection:
+            cmds.warning("Sélectionne au moins un objet.")
+            return
+        
+        # ----------------------- Je recupere les valeurs du spinbox de la section timing ----------------------
+        duration = self.spin_duration.value()
+        step = self.spin_step.value()
+
+        start = 0
+        end = duration
+
+        frames = list(range(start, end, step))
+        frames.append(end)  # Ajoute la dernière frame
+        print(frames) # J'imprimme la liste des frames pour verifier que tout est ok.
+
+        cmds.playbackOptions(minTime=start, maxTime=end) # configurer la durée de l'animation
+
+
+        # ----------------------- Je recupere les valeurs de translate ----------------------
+        t_min = [spin.value() for spin in self.t_min]
+        t_max = [spin.value() for spin in self.t_max]
+        r_min = [spin.value() for spin in self.r_min]
+        r_max = [spin.value() for spin in self.r_max]
+        scale_min = [spin.value() for spin in self.scale_min]
+        scale_max = [spin.value() for spin in self.scale_max]
+
+        # A chaque frame, pour l'objet selectionne, je place une keyframe random sur chaque axe (x,y,z) entre les valeurs min et max.
+        
+        
+        for obj in selection:
+            for frame in frames:
+                
+                # Pour la translation
+                for i, axis in enumerate("xyz"): #  i = 0,1,2 pour x,y,z. axis = "x","y","z"
+                    value = random.uniform(t_min[i], t_max[i])
+                    cmds.setKeyframe(obj, attribute=f"t{axis}", value=value, time=frame)
+
+                # Pour la rotation
+                for i, axis in enumerate("xyz"): #  i = 0,1,2 pour x,y,z. axis = "x","y","z"
+                    value = random.uniform(r_min[i], r_max[i])
+                    cmds.setKeyframe(obj, attribute=f"r{axis}", value=value, time=frame)
+
+                # Pour la scale
+                for i, axis in enumerate("xyz"): #  i = 0,1,2 pour x,y,z. axis = "x","y","z"
+                    value = random.uniform(scale_min[i], scale_max[i])
+                    cmds.setKeyframe(obj, attribute=f"s{axis}", value=value, time=frame)
 
 
 
